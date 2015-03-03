@@ -1,0 +1,18 @@
+@charset "UTF-8";
+span.equation, div.equation {
+  font-family: times, "ヒラギノ明朝 ProN W3", "HiraMinProN-W3", "ヒラギノ明朝 ProN W6", "HiraMinProN-W6", "MS-Mincho", serif;
+}
+
+span.math-normal {
+  font-style: normal;
+}
+
+span.math-italic-topbar {
+  font-style: italic;
+  border-top: 1px black solid;
+  padding-top: 0;
+}
+
+span.equation i, div.equation i {
+  font-style: italic;
+}
