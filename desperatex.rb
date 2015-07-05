@@ -74,16 +74,22 @@ class DesperaTEX
     end
 
     s = _s + ""
-    s = escape_chars(s)
-    s = numbering_bracket(s)
-    s = supsub(s)
-    s = bar(s)
-    s = save_box(s)
-    # FIXME: more parse
-    s = space(s)
-    s = unescape_chars(s)
-    s = restore_box(s)
-    s = unescape_chars(s) # inside mbox
+
+    begin
+      s = escape_chars(s)
+      s = numbering_bracket(s)
+      s = supsub(s)
+      s = bar(s)
+      s = save_box(s)
+      # FIXME: more parse
+      s = space(s)
+      s = unescape_chars(s)
+      s = restore_box(s)
+      s = unescape_chars(s) # inside mbox
+    rescue Exception=>e
+      STDERR.puts "Unknown error: #{e}, #{_s}"
+      raise DesperaTEXFailedException.new(_s.gsub("\n", "◆"))
+    end
 
     if s =~ /[#{EO}#{EC}]/ || s =~ /\\/
       raise DesperaTEXFailedException.new(_s.gsub("\n", "◆"))
