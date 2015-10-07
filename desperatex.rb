@@ -39,6 +39,8 @@ class DesperaTEX
       '\leq' => "<r>≦</r>",
       '\geq' => "<r>≧</r>",
       '\quad' => "　",
+      '\pi' => "π",
+      '\sigma' => "σ",
       '\ ' => "#{EO}SP#{EC}",
     }
 
