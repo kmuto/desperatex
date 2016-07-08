@@ -41,6 +41,7 @@ class DesperaTEX
       '\quad' => "　",
       '\pi' => "π",
       '\sigma' => "σ",
+      '\lambda' => "<r>λ</r>",
       '\ ' => "#{EO}SP#{EC}",
     }
 
