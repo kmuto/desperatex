@@ -1,5 +1,5 @@
 # coding: utf-8
-# Copyright 2015 Kenshi Muto <kmuto@debian.org>
+# Copyright 2015-2016 Kenshi Muto <kmuto@debian.org>
 # (damn) LaTeX Math to HTML parser
 
 class DesperaTEX
@@ -114,9 +114,9 @@ class DesperaTEX
   def supsub(s)
     # ^, _
     s = s.gsub(/\^#{EO}BO:(\d+)#{EC}(.+?)#{EO}BC:\1#{EC}/, '<sup>\2</sup>').
-      gsub(/\^([a-zA-Z0-9]+?)/, '<sup>\1</sup>').
+      gsub(/\^([a-zA-Z0-9])/, '<sup>\1</sup>').
       gsub(/\_#{EO}BO:(\d+)#{EC}(.+?)#{EO}BC:\1#{EC}/, '<sub>\2</sub>').
-      gsub(/\_([a-zA-Z0-9]+?)/, '<sub>\1</sub>')
+      gsub(/\_([a-zA-Z0-9])/, '<sub>\1</sub>')
 
     if s =~ /[_^]/
       s = supsub(s)
