@@ -25,6 +25,13 @@ k= \log_2 m
 k= \log_n m
 k= \log m
 z=f_i(x,y)
+a^n
+a^2
+a_n
+2^2
+2^n
+a^{n+1}
+\pi^{\pi\times e}
 EOT
 
 html = []
