@@ -7,8 +7,8 @@ class DesperaTEX
   EO = "ゐ"
   EC = "ゑ"
 
-  def initialize(mapfile = nil)
-    @bs_escapes = {
+  def bs_map
+    {
       '\{' => "{",
       '\}' => "}",
       '\｝' => "}",
@@ -31,9 +31,11 @@ class DesperaTEX
       "``" => "<r>\"</r>",
       "''" => "<r>\"</r>",
       ', ' => ",#{EO}SP#{EC}", # FIXME
-      }
+    }
+  end
 
-    @cmd_escapes = {
+  def cmd_map
+    {
       '\log' => "<r>log</r>",
       '\times' => "<r>×</r>",
       '\cdots' => "<r>…</r>",
@@ -46,9 +48,16 @@ class DesperaTEX
       '\lambda' => "<r>λ</r>",
       '\ ' => "#{EO}SP#{EC}",
     }
+  end
+
+  def initialize(mapfile = nil)
+    @bs_escapes = bs_map
+    @cmd_escapes = cmd_map
 
     @mbox_memory = []
     @mathit_memory = []
+    @mathrm_memory = []
+    @mathbm_memory = []
     @box_counter = 1
 
     @alternative_map = {}
@@ -182,10 +191,26 @@ class DesperaTEX
       ret
     }
 
+    s.gsub!(/\\(?:rm|text|textrm|mathrm)#{EO}BO:(\d+)#{EC}(.+?)#{EO}BC:\1#{EC}/) {|m|
+      s2 = $2.gsub(" ", "#{EO}SP#{EC}")
+      @mathrm_memory[@box_counter] = "<r>#{s2}</r>"
+      ret = "#{EO}MATHRM" + ("a" * @box_counter) + EC
+      @box_counter += 1
+      ret
+    }
+
     s.gsub!(/\\mathit#{EO}BO:(\d+)#{EC}(.+?)#{EO}BC:\1#{EC}/) {|m|
       s2 = $2.gsub(" ", "#{EO}SP#{EC}")
       @mathit_memory[@box_counter] = "<i>#{s2}</i>"
       ret = "#{EO}MATHIT" + ("a" * @box_counter) + EC
+      @box_counter += 1
+      ret
+    }
+
+    s.gsub!(/\\bm#{EO}BO:(\d+)#{EC}(.+?)#{EO}BC:\1#{EC}/) {|m|
+      s2 = $2.gsub(" ", "#{EO}SP#{EC}")
+      @mathbm_memory[@box_counter] = "<b>#{s2}</b>"
+      ret = "#{EO}MATHBM" + ("a" * @box_counter) + EC
       @box_counter += 1
       ret
     }
@@ -199,8 +224,16 @@ class DesperaTEX
       @mbox_memory[$1.size]
     }
 
+    s.gsub!(/#{EO}MATHRM(a+)#{EC}/) {|m|
+      @mathrm_memory[$1.size]
+    }
+
     s.gsub!(/#{EO}MATHIT(a+)#{EC}/) {|m|
       @mathit_memory[$1.size]
+    }
+
+    s.gsub!(/#{EO}MATHBM(a+)#{EC}/) {|m|
+      @mathbm_memory[$1.size]
     }
 
     s.gsub('</r><r>', '').gsub('</i><i>', '').
