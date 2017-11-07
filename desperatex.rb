@@ -1,6 +1,7 @@
 # coding: utf-8
 # Copyright 2015-2016 Kenshi Muto <kmuto@debian.org>
 # (damn) LaTeX Math to HTML parser
+require 'rexml/streamlistener'
 
 class DesperaTEX
   # escaped string: ゐ<cmd>:<value>ゑ
@@ -79,6 +80,9 @@ class DesperaTEX
       gsub("</rvbar>", "</span>").
       gsub("<ibar>", "<span class='math-italic-topbar'>").
       gsub("</ibar>", "</span>")
+  end
+
+  def toindesign(s)
   end
 
   def parse(_s)
@@ -240,6 +244,143 @@ class DesperaTEX
       gsub(" ", "").gsub("#{EO}SP#{EC}", " ").
       gsub("#{EO}LT#{EC}", "&lt;").
       gsub("#{EO}GT#{EC}", "&gt;")
+  end
+end
+
+class DesperaTEXInDesign
+  include REXML::StreamListener
+  def initialize
+    @sup = 0
+    @sub = 0
+    @b = 0
+    @r = 0
+    @i = 0
+    @subsup = []
+    @content = ''
+  end
+
+  def tag_start(name, attrs)
+    case name
+    when 'sup'
+      @sup += 1
+      @subsup.push('sup')
+      raise DesperaTEXFailedException, 'sup level exceeded' if @sup > 2
+    when 'sub'
+      @sub += 1
+      @subsup.push('sub')
+      raise DesperaTEXFailedException, 'sub level exceeded' if @sub > 2
+    when 'r'
+      @r += 1
+      if @sup == 2
+        @content << @b > 0 ? '<rbsup2>' : '<rsup2>'
+      elsif @sup == 1
+        if @subsup.size == 1
+          @content << @b > 0 ? '<rbsup>' : '<rsup>'
+        else # スタックが2つあって@sup==1だったら常にsubのはず
+          @content << @b > 0 ? '<rbsupsub>' : '<rsupsub>'
+        end
+      elsif @sub == 2
+        @content << @b > 0 ? '<rbsub2>' : '<rsub2>'
+      elsif @sub == 1
+        if @subsup.size == 1
+          @content << @b > 0 ? '<rbsub>' : '<rsub>'
+        else # スタックが2つあって@sub==1だったら常にsupのはず
+          @content << @b > 0 ? '<rbsubsup>' : '<rsubsup>'
+        end
+      elsif @b > 0
+        @content << '<rb>'
+      else
+        @content << '<r>'
+      end
+    when 'i'
+      @i += 1
+      if @sup == 2
+        @content << @b > 0 ? '<ibsup2>' : '<isup2>'
+      elsif @sup == 1
+        if @subsup.size == 1
+          @content << @b > 0 ? '<ibsup>' : '<isup>'
+        else # スタックが2つあって@sup==1だったら常にsubのはず
+          @content << @b > 0 ? '<ibsupsub>' : '<isupsub>'
+        end
+      elsif @sub == 2
+        @content << @b > 0 ? '<ibsub2>' : '<isub2>'
+      elsif @sub == 1
+        if @subsup.size == 1
+          @content << @b > 0 ? '<ibsub>' : '<isub>'
+        else # スタックが2つあって@sub==1だったら常にsupのはず
+          @content << @b > 0 ? '<ibsubsup>' : '<isubsup>'
+        end
+      elsif @b > 0
+        @content << '<ib>'
+      else
+        @content << '<i>'
+      end
+    when 'b'
+      @b += 1
+    end
+  end
+
+  def tag_end(name)
+    case name
+    when 'sup'
+      @sup -= 1
+      @subsup.pop
+    when 'sub'
+      @sub -= 1
+      @subsup.pop
+    when 'r'
+      @r -= 1
+      if @sup == 2
+        @content << @b > 0 ? '</rbsup2>' : '</rsup2>'
+      elsif @sup == 1
+        if @subsup.size == 1
+          @content << @b > 0 ? '</rbsup>' : '</rsup>'
+        else # スタックが2つあって@sup==1だったら常にsubのはず
+          @content << @b > 0 ? '</rbsupsub>' : '</rsupsub>'
+        end
+      elsif @sub == 2
+        @content << @b > 0 ? '</rbsub2>' : '</rsub2>'
+      elsif @sub == 1
+        if @subsup.size == 1
+          @content << @b > 0 ? '</rbsub>' : '</rsub>'
+        else # スタックが2つあって@sub==1だったら常にsupのはず
+          @content << @b > 0 ? '</rbsubsup>' : '</rsubsup>'
+        end
+      elsif @b > 0
+        @content << '</rb>'
+      else
+        @content << '</r>'
+      end
+    when 'i'
+      @i -= 1
+      if @sup == 2
+        @content << @b > 0 ? '</ibsup2>' : '</isup2>'
+      elsif @sup == 1
+        if @subsup.size == 1
+          @content << @b > 0 ? '</ibsup>' : '</isup>'
+        else # スタックが2つあって@sup==1だったら常にsubのはず
+          @content << @b > 0 ? '</ibsupsub>' : '</isupsub>'
+        end
+      elsif @sub == 2
+        @content << @b > 0 ? '</ibsub2>' : '</isub2>'
+      elsif @sub == 1
+        if @subsup.size == 1
+          @content << @b > 0 ? '</ibsub>' : '</isub>'
+        else # スタックが2つあって@sub==1だったら常にsupのはず
+          @content << @b > 0 ? '</ibsubsup>' : '</isubsup>'
+        end
+      elsif @b > 0
+        @content << '</ib>'
+      else
+        @content << '</i>'
+      end
+    when 'b'
+      @b -= 1
+    end
+  end
+
+  def text(s)
+    @content << s
   end
 end
 
