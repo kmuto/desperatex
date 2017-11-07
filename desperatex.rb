@@ -1,6 +1,7 @@
 # coding: utf-8
 # Copyright 2015-2016 Kenshi Muto <kmuto@debian.org>
 # (damn) LaTeX Math to HTML parser
+require 'rexml/document'
 require 'rexml/streamlistener'
 
 class DesperaTEX
@@ -83,6 +84,10 @@ class DesperaTEX
   end
 
   def toindesign(s)
+#    content = []
+#    REXML::Document.parse_stream(s, DesperaTEXInDesign.new(content))
+#    content.join
+    content = DesperaTEXInDesign.parse(s)
   end
 
   def parse(_s)
@@ -248,139 +253,118 @@ class DesperaTEX
 end
 
 class DesperaTEXInDesign
-  include REXML::StreamListener
-  def initialize
-    @sup = 0
-    @sub = 0
-    @b = 0
-    @r = 0
-    @i = 0
-    @subsup = []
-    @content = ''
-  end
-
-  def tag_start(name, attrs)
-    case name
-    when 'sup'
-      @sup += 1
-      @subsup.push('sup')
-      raise DesperaTEXFailedException, 'sup level exceeded' if @sup > 2
-    when 'sub'
-      @sub += 1
-      @subsup.push('sub')
-      raise DesperaTEXFailedException, 'sub level exceeded' if @sub > 2
-    when 'r'
-      @r += 1
-      if @sup == 2
-        @content << @b > 0 ? '<rbsup2>' : '<rsup2>'
-      elsif @sup == 1
-        if @subsup.size == 1
-          @content << @b > 0 ? '<rbsup>' : '<rsup>'
-        else # スタックが2つあって@sup==1だったら常にsubのはず
-          @content << @b > 0 ? '<rbsupsub>' : '<rsupsub>'
-        end
-      elsif @sub == 2
-        @content << @b > 0 ? '<rbsub2>' : '<rsub2>'
-      elsif @sub == 1
-        if @subsup.size == 1
-          @content << @b > 0 ? '<rbsub>' : '<rsub>'
-        else # スタックが2つあって@sub==1だったら常にsupのはず
-          @content << @b > 0 ? '<rbsubsup>' : '<rsubsup>'
-        end
-      elsif @b > 0
-        @content << '<rb>'
-      else
-        @content << '<r>'
-      end
-    when 'i'
-      @i += 1
-      if @sup == 2
-        @content << @b > 0 ? '<ibsup2>' : '<isup2>'
-      elsif @sup == 1
-        if @subsup.size == 1
-          @content << @b > 0 ? '<ibsup>' : '<isup>'
-        else # スタックが2つあって@sup==1だったら常にsubのはず
-          @content << @b > 0 ? '<ibsupsub>' : '<isupsub>'
-        end
-      elsif @sub == 2
-        @content << @b > 0 ? '<ibsub2>' : '<isub2>'
-      elsif @sub == 1
-        if @subsup.size == 1
-          @content << @b > 0 ? '<ibsub>' : '<isub>'
-        else # スタックが2つあって@sub==1だったら常にsupのはず
-          @content << @b > 0 ? '<ibsubsup>' : '<isubsup>'
-        end
-      elsif @b > 0
-        @content << '<ib>'
-      else
-        @content << '<i>'
-      end
-    when 'b'
-      @b += 1
+  def self.from(e, name)
+    while e != e.root
+      return true if e.parent.name == name
+      e = e.parent
     end
+    nil
   end
 
-  def tag_end(name)
-    case name
-    when 'sup'
-      @sup -= 1
-      @subsup.pop
-    when 'sub'
-      @sub -= 1
-      @subsup.pop
-    when 'r'
-      @r -= 1
-      if @sup == 2
-        @content << @b > 0 ? '</rbsup2>' : '</rsup2>'
-      elsif @sup == 1
-        if @subsup.size == 1
-          @content << @b > 0 ? '</rbsup>' : '</rsup>'
-        else # スタックが2つあって@sup==1だったら常にsubのはず
-          @content << @b > 0 ? '</rbsupsub>' : '</rsupsub>'
-        end
-      elsif @sub == 2
-        @content << @b > 0 ? '</rbsub2>' : '</rsub2>'
-      elsif @sub == 1
-        if @subsup.size == 1
-          @content << @b > 0 ? '</rbsub>' : '</rsub>'
-        else # スタックが2つあって@sub==1だったら常にsupのはず
-          @content << @b > 0 ? '</rbsubsup>' : '</rsubsup>'
-        end
-      elsif @b > 0
-        @content << '</rb>'
-      else
-        @content << '</r>'
-      end
-    when 'i'
-      @i -= 1
-      if @sup == 2
-        @content << @b > 0 ? '</ibsup2>' : '</isup2>'
-      elsif @sup == 1
-        if @subsup.size == 1
-          @content << @b > 0 ? '</ibsup>' : '</isup>'
-        else # スタックが2つあって@sup==1だったら常にsubのはず
-          @content << @b > 0 ? '</ibsupsub>' : '</isupsub>'
-        end
-      elsif @sub == 2
-        @content << @b > 0 ? '</ibsub2>' : '</isub2>'
-      elsif @sub == 1
-        if @subsup.size == 1
-          @content << @b > 0 ? '</ibsub>' : '</isub>'
-        else # スタックが2つあって@sub==1だったら常にsupのはず
-          @content << @b > 0 ? '</ibsubsup>' : '</isubsup>'
-        end
-      elsif @b > 0
-        @content << '</ib>'
-      else
-        @content << '</i>'
-      end
-    when 'b'
-      @b -= 1
+  def self.parse(s)
+    doc =REXML::Document.new(s)
+    doc.each_element('/i/sup/sup') do |e|
+      e.name = 'sup2'
     end
-  end
+    doc.each_element('/i/b/sup/sup') do |e|
+      e.name = 'bsup2'
+    end
+    doc.each_element('/i/sup/sub') do |e|
+      e.name = 'supsub'
+    end
+    doc.each_element('/i/b/sup/sub') do |e|
+      e.name = 'bsupsub'
+    end
+    doc.each_element('/i/sub/sub') do |e|
+      e.name = 'sub2'
+    end
+    doc.each_element('/i/b/sub/sub') do |e|
+      e.name = 'bsub2'
+    end
+    doc.each_element('/i/sub/sup') do |e|
+      e.name = 'subsup'
+    end
+    doc.each_element('/i/b/sub/sup') do |e|
+      e.name = 'bsubsup'
+    end
+    doc.each_element('/i/sub') do |e|
+      e.name = 'sub1'
+    end
+    doc.each_element('/i/b/sub') do |e|
+      e.name = 'bsub1'
+    end
+    doc.each_element('/i/sup') do |e|
+      e.name = 'sup1'
+    end
+    doc.each_element('/i/b/sup') do |e|
+      e.name = 'bsup1'
+    end
 
-  def text(s)
-    @content << s
+    doc.each_element('//sub|//sup') do |e|
+      raise DesperaTEXFailedException, "exceeded #{e.name} limits."
+    end
+
+    doc.each_element('//r') do |e|
+      if self.from(e, 'sup2')
+        e.name = 'rsup2'
+      elsif self.from(e, 'bsup2')
+        e.name = 'brsup2'
+      elsif self.from(e, 'supsub')
+        e.name = 'rsupsub'
+      elsif self.from(e, 'bsupsub')
+        e.name = 'rbsupsub'
+      elsif self.from(e, 'sub2')
+        e.name = 'rsub2'
+      elsif self.from(e, 'bsub2')
+        e.name = 'brsub2'
+      elsif self.from(e, 'subsup')
+        e.name = 'rsubsup'
+      elsif self.from(e, 'bsubsup')
+        e.name = 'brsubsup'
+      elsif self.from(e, 'sub1')
+        e.name = 'rsub1'
+      elsif self.from(e, 'bsub1')
+        e.name = 'brsub1'
+      elsif self.from(e, 'sup1')
+        e.name = 'rsup1'
+      elsif self.from(e, 'bsup1')
+        e.name = 'brsup1'
+      elsif self.from(e, 'b')
+        e.name = 'br'
+      end
+    end
+
+    doc.each_element('//i') do |e|
+      if self.from(e, 'sup2')
+        e.name = 'sup2'
+      elsif self.from(e, 'bsup2')
+        e.name = 'bsup2'
+      elsif self.from(e, 'supsub')
+        e.name = 'supsub'
+      elsif self.from(e, 'bsupsub')
+        e.name = 'bsupsub'
+      elsif self.from(e, 'sub2')
+        e.name = 'sub2'
+      elsif self.from(e, 'bsub2')
+        e.name = 'bsub2'
+      elsif self.from(e, 'subsup')
+        e.name = 'subsup'
+      elsif self.from(e, 'bsubsup')
+        e.name = 'bsubsup'
+      elsif self.from(e, 'sub1')
+        e.name = 'sub1'
+      elsif self.from(e, 'bsub1')
+        e.name = 'bsub1'
+      elsif self.from(e, 'sup1')
+        e.name = 'sup1'
+      elsif self.from(e, 'bsup1')
+        e.name = 'bsup1'
+      elsif self.from(e, 'b')
+        e.name = 'b'
+      end
+    end
+
+    doc
   end
 end
 
