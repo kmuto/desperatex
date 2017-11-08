@@ -60,6 +60,48 @@ tohtml(文字列)
 ```<ibar></ibar>``` → ```<span class='math-italic-topbar'></span>```
 を行うだけです。
 
+## InDesign
+```
+toindesign(文字列)
+```
+
+簡易 HTML 記法から InDesign XML に変換します。
+
+- 2重を超える上付き・下付きはエラーになります。
+- 上付き・下付きで TeX 命令を添字にする場合、`a_\alpha` ではなく `a_{\alpha}` のように囲む必要があります。
+
+XML タグとマッピングすべき文字スタイル
+```
+i: イタリック
+b: 太字イタリック
+sup2: 上付きの上付き、イタリック
+bsup2: 上付きの上付き、太字イタリック
+supsub: 上付きの下付き、イタリック
+bsupsub: 上付きの下付き、太字イタリック
+sub2: 下付きの下付き、イタリック
+bsub2: 下付きの下付き、太字イタリック
+subsup: 下付きの上付き、イタリック
+bsubsup: 下付きの上付き、太字イタリック
+sub: 下付き、イタリック
+bsub: 下付き、太字イタリック
+sup: 上付き、イタリック
+bsup: 上付き、太字イタリック
+r: 正体
+br: 太字正体
+rsup2: 上付きの上付き、正体
+rbsup2: 上付きの上付き、太字正体
+rsupsub: 上付きの下付き、正体
+rbsupsub: 上付きの下付き、太字正体
+rsub2: 下付きの下付き、正体
+rbsub2: 下付きの下付き、太字正体
+rsubsup: 下付きの上付き、正体
+rbsubsup: 下付きの上付き、太字正体
+rsub: 下付き、正体
+rbsub: 下付き、太字正体
+rsup: 上付き、正体
+rbsup: 上付き、太字正体
+```
+
 ## Copyright & License
 ```
  Copyright (c) 2015 Kenshi Muto.
