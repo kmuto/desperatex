@@ -311,6 +311,15 @@ class DesperaTEX
       end
     end
 
+    doc.each_element('//img') do |e|
+      fname = e[0].to_s.gsub(/[A-Z]+/, 'L\&')
+      fname = "sup.#{fname}" if from(e, 'sup')
+      fname = "sub.#{fname}" if from(e, 'sub')
+      fname = "b.#{fname}" if from(e, 'b')
+      e[0].remove
+      e.add_text(REXML::Text.new("◆→math:#{fname}.eps←◆"))
+    end
+
     doc
   end
 end
