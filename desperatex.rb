@@ -1,54 +1,82 @@
-# coding: utf-8
-# Copyright 2015-2016 Kenshi Muto <kmuto@debian.org>
+# Copyright 2015-2017 Kenshi Muto <kmuto@debian.org>
 # (damn) LaTeX Math to HTML parser
 require 'rexml/document'
 require 'rexml/streamlistener'
 
 class DesperaTEX
   # escaped string: ゐ<cmd>:<value>ゑ
-  EO = "ゐ"
-  EC = "ゑ"
+  EO = 'ゐ'.freeze
+  EC = 'ゑ'.freeze
 
   def bs_map
     {
-      '\{' => "{",
-      '\}' => "}",
-      '\｝' => "}",
-      '\_' => "_",
-      '\|' => "|",
-      '\^' => "^",
-      '\%' => "%",
-      '\$' => "$",
-      '\#' => "#",
+      '\{' => '<r>{</r>',
+      '\}' => '<r>}</r>',
+      '\｝' => '<r>}</r>',
+      '\_' => '<r>_</r>',
+      '\|' => '<r>|</r>',
+      '\^' => '<r>^</r>',
+      '\%' => '<r>%</r>',
+      '\$' => '<r>$</r>',
+      '\#' => '<r>#</r>',
       '\;' => "#{EO}SP#{EC}",
-      '\<' => "◆→<←◆", # FIXME
-      '\>' => "◆→>←◆", # FIXME
-      '<' => "<r>＜</r>",
-      '>' => "<r>＞</r>",
-      '+' => "<r>＋</r>",
-      '-' => "<r>−</r>",
-      '*' => "<r>＊</r>",
-      '/' => "<r>/</r>",
-      '=' => "<r>＝</r>",
-      "``" => "<r>\"</r>",
-      "''" => "<r>\"</r>",
-      ', ' => ",#{EO}SP#{EC}", # FIXME
+      '\<' => '◆→<←◆', # FIXME
+      '\>' => '◆→>←◆', # FIXME
+      '<' => '<r>＜</r>',
+      '>' => '<r>＞</r>',
+      '+' => '<r>＋</r>',
+      '-' => '<r>−</r>',
+      '*' => '<r>＊</r>',
+      '/' => '<r>/</r>',
+      '=' => '<r>＝</r>',
+      '``' => "<r>\'</r>",
+      "''" => '<r>"</r>',
+      ', ' => ",#{EO}SP#{EC}" # FIXME
     }
   end
 
   def cmd_map
     {
-      '\log' => "<r>log</r>",
-      '\times' => "<r>×</r>",
-      '\cdots' => "<r>…</r>",
-      '\cdot' => "<r>・</r>",
-      '\leq' => "<r>≦</r>",
-      '\geq' => "<r>≧</r>",
-      '\quad' => "　",
-      '\pi' => "π",
-      '\sigma' => "σ",
-      '\lambda' => "<r>λ</r>",
-      '\ ' => "#{EO}SP#{EC}",
+      '\log' => '<r>log</r>',
+      '\exp' => '<r>exp</r>',
+      '\sin' => '<r>sin</r>',
+      '\cos' => '<r>cos</r>',
+      '\tan' => '<r>tan</r>',
+      '\times' => '<r>×</r>',
+      '\cdots' => '<r>…</r>',
+      '\cdot' => '<r>・</r>',
+      '\equiv' => '<r>≡</r>',
+      # '\leq' => '<r>≤</r>',
+      # '\geq' => '<r>≥</r>',
+      '\leq' => '<r>≦</r>',
+      '\geq' => '<r>≧</r>',
+      '\quad' => '<r>　</r>',
+      '\pi' => 'π',
+      '\sigma' => 'σ',
+      '\theta' => 'θ',
+      '\alpha' => 'α',
+      '\beta' => 'Β',
+      '\gamma' => 'γ',
+      '\varGamma' => 'Γ',
+      '\delta' => 'Δ',
+      '\Delta' => 'Δ',
+      '\epsilon' => 'ε',
+      '\varepsilon' => 'ε',
+      '\kappa' => 'κ',
+      '\lambda' => 'λ',
+      '\mu' => 'μ',
+      '\rho' => 'ρ',
+      '\tau' => 'τ',
+      '\partial' => '∂',
+      '\phi' => 'φ',
+      '\Phi' => 'φ',
+      '\varPhi' => 'φ',
+      '\approx' => '<r>≈</r>',
+      '\simeq' => '<r>≃</r>',
+      '\fallingdotseq' => '<r>≒</r>',
+      '\varpropto' => '<r>∝</r>',
+      '\infty' => '<r>∞</r>',
+      '\ ' => "#{EO}SP#{EC}"
     }
   end
 
@@ -63,40 +91,36 @@ class DesperaTEX
     @box_counter = 1
 
     @alternative_map = {}
-    if mapfile && File.exist?(mapfile)
-      File.open(mapfile) do |f|
-        f.each_line do |l|
-          next if l =~ /\A\#@\#/
-          a = l.chomp.split("\t", 2)
-          @alternative_map[a[0]] = a[1]
-        end
+    return if mapfile.nil? || !File.exist?(mapfile)
+    File.open(mapfile) do |f|
+      f.each_line do |l|
+        next if l =~ /\A\#@\#/
+        a = l.chomp.split("\t", 2)
+        @alternative_map[a[0]] = a[1]
       end
     end
   end
 
   def tohtml(s)
-    s.gsub("<r>", "<span class='math-normal'>").
-      gsub("</r>", "</span>").
-      gsub("<rvbar>", "<span class='math-normal'>").
-      gsub("</rvbar>", "</span>").
-      gsub("<ibar>", "<span class='math-italic-topbar'>").
-      gsub("</ibar>", "</span>")
+    s.gsub('<r>', '<span class="math-normal">')
+     .gsub('</r>', '</span>')
+     .gsub('<rvbar>', '<span class="math-normal">')
+     .gsub('</rvbar>', '</span>')
+     .gsub('<ibar>', '<span class="math-italic-topbar">')
+     .gsub('</ibar>', '</span>')
   end
 
   def toindesign(s)
-#    content = []
-#    REXML::Document.parse_stream(s, DesperaTEXInDesign.new(content))
-#    content.join
-    content = DesperaTEXInDesign.parse(s)
+    parse_xmlindesign(s)
   end
 
-  def parse(_s)
-    if @alternative_map[_s.gsub("\n", "◆")]
+  def parse(orgs)
+    if @alternative_map[orgs.gsub("\n", '◆')]
       # alternative override
-      return @alternative_map[_s.gsub("\n", "◆")]
+      return @alternative_map[orgs.gsub("\n", '◆')]
     end
 
-    s = _s + ""
+    s = orgs + ''
 
     begin
       s = escape_chars(s)
@@ -109,21 +133,19 @@ class DesperaTEX
       s = unescape_chars(s)
       s = restore_box(s)
       s = unescape_chars(s) # inside mbox
-    rescue Exception=>e
-      STDERR.puts "Unknown error: #{e}, #{_s}"
-      raise DesperaTEXFailedException.new(_s.gsub("\n", "◆"))
+    rescue StandardError => e
+      raise DesperaTEXFailedException.new(orgs.gsub("\n", '◆')), "Unknown error: #{e}, #{orgs}"
     end
 
     if s =~ /[#{EO}#{EC}]/ || s =~ /\\/
-      raise DesperaTEXFailedException.new(_s.gsub("\n", "◆"))
+      raise DesperaTEXFailedException.new(orgs.gsub("\n", '◆')), "Failed to handle this expression: #{orgs}"
     end
 
-    return "<i>#{s}</i>"
+    "<i>#{s}</i>"
   end
 
   def space(s)
-    s.gsub!(",", ",#{EO}SP#{EC}") # space after ","
-    s
+    s.gsub(',', ",#{EO}SP#{EC}") # space after ','
   end
 
   def bar(s)
@@ -133,15 +155,12 @@ class DesperaTEX
 
   def supsub(s)
     # ^, _
-    s = s.gsub(/\^#{EO}BO:(\d+)#{EC}(.+?)#{EO}BC:\1#{EC}/, '<sup>\2</sup>').
-      gsub(/\^([a-zA-Z0-9])/, '<sup>\1</sup>').
-      gsub(/\_#{EO}BO:(\d+)#{EC}(.+?)#{EO}BC:\1#{EC}/, '<sub>\2</sub>').
-      gsub(/\_([a-zA-Z0-9])/, '<sub>\1</sub>')
+    s = s.gsub(/\^#{EO}BO:(\d+)#{EC}(.+?)#{EO}BC:\1#{EC}/, '<sup>\2</sup>')
+         .gsub(/\^([a-zA-Z0-9])/, '<sup>\1</sup>')
+         .gsub(/\_#{EO}BO:(\d+)#{EC}(.+?)#{EO}BC:\1#{EC}/, '<sub>\2</sub>')
+         .gsub(/\_([a-zA-Z0-9])/, '<sub>\1</sub>')
 
-    if s =~ /[_^]/
-      s = supsub(s)
-    end
-
+    s = supsub(s) if s =~ /[_^]/
     s
   end
 
@@ -152,8 +171,8 @@ class DesperaTEX
     end
 
     @cmd_escapes.keys.each_with_index do |c, i|
-      s = s.gsub(Regexp.new("#{Regexp.escape(c)}([^a-zA-Z])"), "#{EO}CMESC:#{i}#{EC}" + '\1').
-          gsub(Regexp.new("#{Regexp.escape(c)}\\Z"), "#{EO}CMESC:#{i}#{EC}" + '\1')
+      s = s.gsub(Regexp.new("#{Regexp.escape(c)}([^a-zA-Z])"), "#{EO}CMESC:#{i}#{EC}" + '\1')
+           .gsub(Regexp.new("#{Regexp.escape(c)}\\Z"), "#{EO}CMESC:#{i}#{EC}" + '\1')
     end
     s
   end
@@ -172,16 +191,16 @@ class DesperaTEX
 
   def numbering_bracket(s)
     # Numbering { }
-    result = ""
+    result = ''
     stack = []
     i = 0
 
     s.each_char do |c|
-      if c == "{"
+      if c == '{'
         stack.push(i)
         result << "#{EO}BO:#{i}#{EC}"
         i += 1
-      elsif c == "}"
+      elsif c == '}'
         result << "#{EO}BC:#{stack.pop}#{EC}"
       else
         result << c
@@ -192,175 +211,103 @@ class DesperaTEX
   end
 
   def save_box(s)
-    s.gsub!(/\\mbox#{EO}BO:(\d+)#{EC}(.+?)#{EO}BC:\1#{EC}/) {|m|
-      s2 = $2.gsub(" ", "#{EO}SP#{EC}")
+    s.gsub!(/\\mbox#{EO}BO:(\d+)#{EC}(.+?)#{EO}BC:\1#{EC}/) do
+      s2 = restore_box($2.gsub(' ', "#{EO}SP#{EC}"))
       @mbox_memory[@box_counter] = "<r>#{s2}</r>"
-      ret = "#{EO}MBOX" + ("a" * @box_counter) + EC
+      ret = "#{EO}MBOX" + ('a' * @box_counter) + EC
       @box_counter += 1
       ret
-    }
+    end
 
-    s.gsub!(/\\(?:rm|text|textrm|mathrm)#{EO}BO:(\d+)#{EC}(.+?)#{EO}BC:\1#{EC}/) {|m|
-      s2 = $2.gsub(" ", "#{EO}SP#{EC}")
+    s.gsub!(/\\(?:rm|text|textrm|mathrm)#{EO}BO:(\d+)#{EC}(.+?)#{EO}BC:\1#{EC}/) do
+      s2 = restore_box($2.gsub(' ', "#{EO}SP#{EC}"))
       @mathrm_memory[@box_counter] = "<r>#{s2}</r>"
-      ret = "#{EO}MATHRM" + ("a" * @box_counter) + EC
+      ret = "#{EO}MATHRM" + ('a' * @box_counter) + EC
       @box_counter += 1
       ret
-    }
+    end
 
-    s.gsub!(/\\mathit#{EO}BO:(\d+)#{EC}(.+?)#{EO}BC:\1#{EC}/) {|m|
-      s2 = $2.gsub(" ", "#{EO}SP#{EC}")
+    s.gsub!(/\\mathit#{EO}BO:(\d+)#{EC}(.+?)#{EO}BC:\1#{EC}/) do
+      s2 = restore_box($2.gsub(' ', "#{EO}SP#{EC}"))
       @mathit_memory[@box_counter] = "<i>#{s2}</i>"
-      ret = "#{EO}MATHIT" + ("a" * @box_counter) + EC
+      ret = "#{EO}MATHIT" + ('a' * @box_counter) + EC
       @box_counter += 1
       ret
-    }
+    end
 
-    s.gsub!(/\\bm#{EO}BO:(\d+)#{EC}(.+?)#{EO}BC:\1#{EC}/) {|m|
-      s2 = $2.gsub(" ", "#{EO}SP#{EC}")
+    s.gsub!(/\\(?:bm|mathbm|mathbf)#{EO}BO:(\d+)#{EC}(.+?)#{EO}BC:\1#{EC}/) do
+      s2 = restore_box($2.gsub(' ', "#{EO}SP#{EC}"))
       @mathbm_memory[@box_counter] = "<b>#{s2}</b>"
-      ret = "#{EO}MATHBM" + ("a" * @box_counter) + EC
+      ret = "#{EO}MATHBM" + ('a' * @box_counter) + EC
       @box_counter += 1
       ret
-    }
+    end
     s
   end
 
   def restore_box(s)
     s.gsub!(/[:;0-9()\[\]\{\}!,.]+/, '<r>\&</r>')
 
-    s.gsub!(/#{EO}MBOX(a+)#{EC}/) {|m|
-      @mbox_memory[$1.size]
-    }
+    s.gsub!(/#{EO}MBOX(a+)#{EC}/) { @mbox_memory[$1.size] }
+    s.gsub!(/#{EO}MATHRM(a+)#{EC}/) { @mathrm_memory[$1.size] }
+    s.gsub!(/#{EO}MATHIT(a+)#{EC}/) { @mathit_memory[$1.size] }
+    s.gsub!(/#{EO}MATHBM(a+)#{EC}/) { @mathbm_memory[$1.size] }
 
-    s.gsub!(/#{EO}MATHRM(a+)#{EC}/) {|m|
-      @mathrm_memory[$1.size]
-    }
-
-    s.gsub!(/#{EO}MATHIT(a+)#{EC}/) {|m|
-      @mathit_memory[$1.size]
-    }
-
-    s.gsub!(/#{EO}MATHBM(a+)#{EC}/) {|m|
-      @mathbm_memory[$1.size]
-    }
-
-    s.gsub('</r><r>', '').gsub('</i><i>', '').
-      gsub(" ", "").gsub("#{EO}SP#{EC}", " ").
-      gsub("#{EO}LT#{EC}", "&lt;").
-      gsub("#{EO}GT#{EC}", "&gt;")
+    s.gsub('</r><r>', '').gsub('</i><i>', '')
+     .gsub(' ', '').gsub("#{EO}SP#{EC}", ' ')
+     .gsub("#{EO}LT#{EC}", '&lt;')
+     .gsub("#{EO}GT#{EC}", '&gt;')
   end
-end
 
-class DesperaTEXInDesign
-  def self.from(e, name)
+  def from(e, name)
     while e != e.root
-      return true if e.parent.name == name
+      return e if e.parent.name == name
       e = e.parent
     end
     nil
   end
 
-  def self.parse(s)
-    doc =REXML::Document.new(s)
-    doc.each_element('/i/sup/sup') do |e|
-      e.name = 'sup2'
-    end
-    doc.each_element('/i/b/sup/sup') do |e|
-      e.name = 'bsup2'
-    end
-    doc.each_element('/i/sup/sub') do |e|
-      e.name = 'supsub'
-    end
-    doc.each_element('/i/b/sup/sub') do |e|
-      e.name = 'bsupsub'
-    end
-    doc.each_element('/i/sub/sub') do |e|
-      e.name = 'sub2'
-    end
-    doc.each_element('/i/b/sub/sub') do |e|
-      e.name = 'bsub2'
-    end
-    doc.each_element('/i/sub/sup') do |e|
-      e.name = 'subsup'
-    end
-    doc.each_element('/i/b/sub/sup') do |e|
-      e.name = 'bsubsup'
-    end
-    doc.each_element('/i/sub') do |e|
-      e.name = 'sub1'
-    end
-    doc.each_element('/i/b/sub') do |e|
-      e.name = 'bsub1'
-    end
-    doc.each_element('/i/sup') do |e|
-      e.name = 'sup1'
-    end
-    doc.each_element('/i/b/sup') do |e|
-      e.name = 'bsup1'
+  def parse_xmlindesign(s)
+    doc = REXML::Document.new(s)
+    doc.each_element('//sup//sup//sup|//sup//sup//sub|//sup//sub//sup|//sup//sub//sub|//sub//sup//sup|//sub//sup//sub|//sub//sub//sup|//sub//sub//sub') do
+      raise DesperaTEXFailedException, 'too deep sup/sub'
     end
 
-    doc.each_element('//sub|//sup') do |e|
-      raise DesperaTEXFailedException, "exceeded #{e.name} limits."
+    doc.each_element('//sup') do |e|
+      e.name = 'sup2' if from(e, 'sup')
+      e.name = 'subsup' if from(e, 'sub')
+      e.name = "b#{e.name}" if from(e, 'b')
+    end
+    doc.each_element('//sub') do |e|
+      e.name = 'sub2' if from(e, 'sub')
+      e.name = 'supsub' if from(e, 'sup')
+      e.name = "b#{e.name}" if from(e, 'b')
     end
 
-    doc.each_element('//r') do |e|
-      if self.from(e, 'sup2')
-        e.name = 'rsup2'
-      elsif self.from(e, 'bsup2')
-        e.name = 'brsup2'
-      elsif self.from(e, 'supsub')
-        e.name = 'rsupsub'
-      elsif self.from(e, 'bsupsub')
-        e.name = 'rbsupsub'
-      elsif self.from(e, 'sub2')
-        e.name = 'rsub2'
-      elsif self.from(e, 'bsub2')
-        e.name = 'brsub2'
-      elsif self.from(e, 'subsup')
-        e.name = 'rsubsup'
-      elsif self.from(e, 'bsubsup')
-        e.name = 'brsubsup'
-      elsif self.from(e, 'sub1')
-        e.name = 'rsub1'
-      elsif self.from(e, 'bsub1')
-        e.name = 'brsub1'
-      elsif self.from(e, 'sup1')
-        e.name = 'rsup1'
-      elsif self.from(e, 'bsup1')
-        e.name = 'brsup1'
-      elsif self.from(e, 'b')
-        e.name = 'br'
+    doc.each_element('//b') do |e|
+      e.name = 'rb' if from(e, 'r')
+      %w[sup sub sup2 subsup sub2 supsub].each do |name|
+        e.name = "b#{name}" if from(e, name)
+      end
+      %w[rsup rsub rsup2 rsubsup rsub2 rsupsub].each do |name|
+        e.name = name.sub(/\Ar/, 'b') if from(e, name)
+      end
+      %w[bsup bsub bsup2 bsubsup bsub2 bsupsub].each do |name|
+        e.name = name if from(e, name)
       end
     end
 
     doc.each_element('//i') do |e|
-      if self.from(e, 'sup2')
-        e.name = 'sup2'
-      elsif self.from(e, 'bsup2')
-        e.name = 'bsup2'
-      elsif self.from(e, 'supsub')
-        e.name = 'supsub'
-      elsif self.from(e, 'bsupsub')
-        e.name = 'bsupsub'
-      elsif self.from(e, 'sub2')
-        e.name = 'sub2'
-      elsif self.from(e, 'bsub2')
-        e.name = 'bsub2'
-      elsif self.from(e, 'subsup')
-        e.name = 'subsup'
-      elsif self.from(e, 'bsubsup')
-        e.name = 'bsubsup'
-      elsif self.from(e, 'sub1')
-        e.name = 'sub1'
-      elsif self.from(e, 'bsub1')
-        e.name = 'bsub1'
-      elsif self.from(e, 'sup1')
-        e.name = 'sup1'
-      elsif self.from(e, 'bsup1')
-        e.name = 'bsup1'
-      elsif self.from(e, 'b')
-        e.name = 'b'
+      e.name = 'b' if from(e, 'b')
+      %w[sup sub sup2 subsup sub2 supsub bsup bsub bsup2 bsubsup bsub2 bsubsup].each do |name|
+        e.name = name if from(e, name)
+      end
+    end
+
+    doc.each_element('//r') do |e|
+      e.name = 'rb' if from(e, 'b')
+      %w[sup sub sup2 subsup sub2 supsub bsup bsub bsup2 bsubsup bsub2 bsubsup].each do |name|
+        e.name = "r#{name}" if from(e, name)
       end
     end
 
@@ -368,5 +315,5 @@ class DesperaTEXInDesign
   end
 end
 
-class DesperaTEXFailedException < Exception
+class DesperaTEXFailedException < RuntimeError
 end
