@@ -102,6 +102,17 @@ class DesperaTEX
   end
 
   def tohtml(s)
+    doc = REXML::Document.new(s)
+    doc.each_element('//img') do |e|
+      fname = e[0].to_s.gsub(/[A-Z]+/, 'L\&')
+      fname = "sup.#{fname}" if from(e, 'sup')
+      fname = "sub.#{fname}" if from(e, 'sub')
+      fname = "b.#{fname}" if from(e, 'b')
+      e[0].remove
+      e.attributes['src'] = "images/math_symbols/#{fname}.png"
+    end
+    s = doc.to_s
+
     s.gsub('<r>', '<span class="math-normal">')
      .gsub('</r>', '</span>')
      .gsub('<rvbar>', '<span class="math-normal">')
@@ -159,8 +170,7 @@ class DesperaTEX
          .gsub(/\^([a-zA-Z0-9])/, '<sup>\1</sup>')
          .gsub(/\_#{EO}BO:(\d+)#{EC}(.+?)#{EO}BC:\1#{EC}/, '<sub>\2</sub>')
          .gsub(/\_([a-zA-Z0-9])/, '<sub>\1</sub>')
-
-    s = supsub(s) if s =~ /[_^]/
+#    s = supsub(s) if s =~ /[_^]/
     s
   end
 
