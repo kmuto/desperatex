@@ -1,4 +1,4 @@
-# Copyright 2015-2017 Kenshi Muto <kmuto@debian.org>
+# Copyright 2015-2018 Kenshi Muto <kmuto@debian.org>
 # (damn) LaTeX Math to HTML parser
 require 'rexml/document'
 require 'rexml/streamlistener'
@@ -104,11 +104,12 @@ class DesperaTEX
   def tohtml(s)
     doc = REXML::Document.new(s)
     doc.each_element('//img') do |e|
+      next if e.attributes['src']
       fname = e[0].to_s.gsub(/[A-Z]+/, 'L\&')
       fname = "sup.#{fname}" if from(e, 'sup')
       fname = "sub.#{fname}" if from(e, 'sub')
       fname = "b.#{fname}" if from(e, 'b')
-      e[0].remove
+      e[0].remove if e[0]
       e.attributes['src'] = "images/math_symbols/#{fname}.png"
     end
     s = doc.to_s
@@ -258,7 +259,7 @@ class DesperaTEX
   def restore_box(s)
     s.gsub!(/[:;0-9()\[\]\{\}!,.]+/, '<r>\&</r>')
 
-    s.gsub!(/#{EO}MBOX(a+)#{EC}/) { @mbox_memory[$1.size] }
+    s.gsub!(/#{EO}MBOX(a+)#{EC}/) { @mbox_memory[$1.size].gsub(' ', "#{EO}SP#{EC}") }
     s.gsub!(/#{EO}MATHRM(a+)#{EC}/) { @mathrm_memory[$1.size] }
     s.gsub!(/#{EO}MATHIT(a+)#{EC}/) { @mathit_memory[$1.size] }
     s.gsub!(/#{EO}MATHBM(a+)#{EC}/) { @mathbm_memory[$1.size] }
@@ -322,12 +323,14 @@ class DesperaTEX
     end
 
     doc.each_element('//img') do |e|
-      fname = e[0].to_s.gsub(/[A-Z]+/, 'L\&')
-      fname = "sup.#{fname}" if from(e, 'sup')
-      fname = "sub.#{fname}" if from(e, 'sub')
-      fname = "b.#{fname}" if from(e, 'b')
-      e[0].remove
-      e.add_text(REXML::Text.new("◆→math:#{fname}.eps←◆"))
+      if e[0]
+        fname = e[0].to_s.gsub(/[A-Z]+/, 'L\&')
+        fname = "sup.#{fname}" if from(e, 'sup')
+        fname = "sub.#{fname}" if from(e, 'sub')
+        fname = "b.#{fname}" if from(e, 'b')
+        e[0].remove
+        e.add_text(REXML::Text.new("◆→math:#{fname}.eps←◆"))
+      end
     end
 
     doc
