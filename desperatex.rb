@@ -1,4 +1,4 @@
-# Copyright 2015-2017 Kenshi Muto <kmuto@debian.org>
+# Copyright 2015-2019 Kenshi Muto <kmuto@debian.org>
 # (damn) LaTeX Math to HTML parser
 require 'rexml/document'
 require 'rexml/streamlistener'
@@ -21,7 +21,7 @@ class DesperaTEX
       '\#' => '<r>#</r>',
       '\;' => "#{EO}SP#{EC}",
       '\<' => '◆→<←◆', # FIXME
-      '\>' => '◆→>←◆', # FIXME
+      '\>' => ' ',
       '<' => '<r>＜</r>',
       '>' => '<r>＞</r>',
       '+' => '<r>＋</r>',
@@ -43,6 +43,7 @@ class DesperaTEX
       '\cos' => '<r>cos</r>',
       '\tan' => '<r>tan</r>',
       '\times' => '<r>×</r>',
+      '\dots' => '<r>...</r>',
       '\cdots' => '<r>…</r>',
       '\cdot' => '<r>・</r>',
       '\equiv' => '<r>≡</r>',
